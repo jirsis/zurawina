@@ -55,23 +55,24 @@ class SCP_Client:
         self.scp.get(file, file)
 
   def get_resource(self, resource):
-    resource_stat = self.scp.lstat(resource)
+    resource_stat = self.scp.lstat(download_dir+"/"+resource)
     if S_ISDIR(resource_stat.st_mode):
-      self.get_directory(self, resource)
+      return self.get_directory(resource)
     else:
-      self.get_file(self, resource)
+      return self.get_file(resource)
 
   def get_directory(self, path):
     self.prepare_dir(path)
     path=path.replace(" ", "\\ ").replace("[", "\\[").replace("]", "\\]")
     scp_copy="scp -r \"%s@%s:~/%s/%s/*\" ." % (ssh_username, ssh_server, download_dir, path)
-    os.system(scp_copy)
+    status = os.system(scp_copy)
     os.chdir("..")
+    return status
 
   def get_file(self, file):
-    path=path.replace(" ", "\\ ").replace("[", "\\[").replace("]", "\\]")
+    file=file.replace(" ", "\\ ").replace("[", "\\[").replace("]", "\\]")
     scp_copy="scp \"%s@%s:~/%s/%s\" ." % (ssh_username, ssh_server, download_dir, file)
-    os.system(scp_copy)
+    return os.system(scp_copy)
 
   def close(self):
     self.scp.close()
@@ -82,8 +83,8 @@ class Transmission_Client():
   connected = colored("Connected", 'green', attrs=['dark'])
   error = colored("FAIL", 'red', attrs=['dark'])
   thinking = colored("...", 'white', attrs=['dark'])
-  copy = colored("Downloaded and copying", 'cyan', attrs=['dark'])
-  delete = colored("Deleted", 'green', attrs=['dark'])
+  copy = colored("Downloaded and ready to copy", 'cyan', attrs=['dark'])
+  delete = colored("Copied and deleted", 'green', attrs=['dark'])
 
   transmission_password = ""
   transmission = ""
@@ -109,9 +110,11 @@ class Transmission_Client():
     for torrent in self.transmission.get_torrents(timeout=transmission_timeout):
       if torrent.doneDate != 0:
         self.print_info(torrent.name, self.copy)
-        scp_client.get_resource(torrent.name)
-        self.transmission.remove_torrent(torrent.id, delete_data=True)
-        self.print_info(torrent.name, self.delete)
+        if (scp_client.get_resource(torrent.name) == 0):
+          self.transmission.remove_torrent(torrent.id, delete_data=True)
+          self.print_info(torrent.name, self.delete)
+        else:
+          self.print_info(torrent.name, self.error)
       else:
         downloading_text = "Downloading "+ str(torrent.percentDone*100)+"%"
         self.print_info(torrent.name, colored(downloading_text, 'cyan', attrs=['dark']))
