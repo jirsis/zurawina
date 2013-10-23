@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 import paramiko
 import os
@@ -55,7 +56,8 @@ class SCP_Client:
         self.scp.get(file, file)
 
   def get_resource(self, resource):
-    resource_stat = self.scp.lstat(download_dir+"/"+resource)
+    resource_stat = self.scp.lstat(download_dir+"/"+resource) 
+    resource=resource.replace(" ", "\\ ").replace("[", "\\[").replace("]", "\\]")
     if S_ISDIR(resource_stat.st_mode):
       return self.get_directory(resource)
     else:
@@ -63,14 +65,12 @@ class SCP_Client:
 
   def get_directory(self, path):
     self.prepare_dir(path)
-    path=path.replace(" ", "\\ ").replace("[", "\\[").replace("]", "\\]")
     scp_copy="scp -r \"%s@%s:~/%s/%s/*\" ." % (ssh_username, ssh_server, download_dir, path)
     status = os.system(scp_copy)
     os.chdir("..")
     return status
 
   def get_file(self, file):
-    file=file.replace(" ", "\\ ").replace("[", "\\[").replace("]", "\\]")
     scp_copy="scp \"%s@%s:~/%s/%s\" ." % (ssh_username, ssh_server, download_dir, file)
     return os.system(scp_copy)
 
@@ -111,7 +111,7 @@ class Transmission_Client():
       if torrent.doneDate != 0:
         self.print_info(torrent.name, self.copy)
         if (scp_client.get_resource(torrent.name) == 0):
-          self.transmission.remove_torrent(torrent.id, delete_data=True)
+#          self.transmission.remove_torrent(torrent.id, delete_data=True)
           self.print_info(torrent.name, self.delete)
         else:
           self.print_info(torrent.name, self.error)
