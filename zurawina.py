@@ -58,6 +58,7 @@ class SCP_Client:
   def get_resource(self, resource):
     resource_stat = self.scp.lstat(download_dir+"/"+resource) 
     resource=resource.replace(" ", "\\ ").replace("[", "\\[").replace("]", "\\]")
+    resource=resource.replace("(", "\\(").replace(")", "\\)")
     if S_ISDIR(resource_stat.st_mode):
       return self.get_directory(resource)
     else:
@@ -111,7 +112,7 @@ class Transmission_Client():
       if torrent.doneDate != 0:
         self.print_info(torrent.name, self.copy)
         if (scp_client.get_resource(torrent.name) == 0):
-#          self.transmission.remove_torrent(torrent.id, delete_data=True)
+          self.transmission.remove_torrent(torrent.id, delete_data=True)
           self.print_info(torrent.name, self.delete)
         else:
           self.print_info(torrent.name, self.error)
